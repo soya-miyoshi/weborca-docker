@@ -1,0 +1,33 @@
+#!/bin/bash
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+export PATH
+
+ORCAETC=/opt/jma/weborca/app/etc
+if [ -f "$ORCAETC"/jma-receipt.env ]
+then
+    . "$ORCAETC"/jma-receipt.env
+fi
+
+ORCATMPDIR=/tmp/jma-tempdir
+rm -fr "$ORCATMPDIR"
+mkdir "$ORCATMPDIR"
+chown "$ORCAUSER":"$ORCAGROUP" "$ORCATMPDIR"
+chmod 700 "$ORCATMPDIR"
+
+COB_LIBRARY_PATH=/opt/jma/weborca/site-lib:/opt/jma/weborca/app
+LD_LIBRARY_PATH=/opt/jma/weborca/mw/libcob
+export COB_LIBRARY_PATH
+
+claim_stop() {
+  kill -HUP $PID
+  exit 0
+}
+
+/usr/bin/ruby3.0 /opt/jma/weborca/app/scripts/claim/rb/clm_rcv.rb $CLAIM_PORT &
+PID=$!
+trap claim_stop SIGHUP SIGTERM
+while :;do
+  sleep 5
+done
+

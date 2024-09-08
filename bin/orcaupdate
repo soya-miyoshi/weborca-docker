@@ -1,0 +1,29 @@
+#!/bin/bash
+
+LOG=/opt/jma/weborca/log/program_update.log
+
+CLAIM=inactive
+
+touch ${LOG}
+echo "$(date +'%Y-%m-%d %T') == program_update start ==" >> ${LOG}
+
+if [ "$(systemctl is-active claim.service)" = "active" ]; then
+  CLAIM=active
+  echo "$(date +'%Y-%m-%d %T') claim stopped." >> ${LOG}
+  systemctl stop claim
+fi
+echo "$(date +'%Y-%m-%d %T') jma-receipt-weborca stopped." >> ${LOG}
+systemctl stop jma-receipt-weborca
+sleep 2
+echo "$(date +'%Y-%m-%d %T') weborca-install started." >> ${LOG}
+weborca-install >> ${LOG}
+sleep 1
+echo "$(date +'%Y-%m-%d %T') jma-receipt-weborca started." >> ${LOG}
+systemctl start jma-receipt-weborca
+sleep 1
+if [ "${CLAIM}" = "active" ]; then
+  echo "$(date +'%Y-%m-%d %T') claim started." >> ${LOG}
+  systemctl start claim
+fi
+
+echo "$(date +'%Y-%m-%d %T') == program_update end ==" >> ${LOG}
