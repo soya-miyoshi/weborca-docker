@@ -16,6 +16,7 @@ services:
       - postgres
     volumes:
       - ./db.conf.sh:/opt/jma/weborca/conf/db.conf
+      - ./weborca-init:/opt/jma/weborca/app/init
     # command: /bin/bash -c "/opt/jma/weborca/app/bin/jma-setup && systemctl restart jma-receipt-weborca && sleep infinity"
 
   postgres:
