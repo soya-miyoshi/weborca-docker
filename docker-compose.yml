@@ -20,6 +20,9 @@ services:
       - ./weborca-init:/opt/jma/weborca/app/init
       - ./jma-receipt:/etc/jma-receipt
       - ./bin:/opt/jma/weborca/app/bin
+    
+
+    command : /bin/bash -c "/opt/jma/weborca/app/bin/jma-setup && sleep infinity"
     # command: /bin/bash -c "/opt/jma/weborca/app/bin/jma-setup && systemctl restart jma-receipt-weborca && sleep infinity"
 
   postgres:
