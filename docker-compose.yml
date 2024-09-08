@@ -11,12 +11,14 @@ services:
       ORCA_DBUSER: orca_user
       ORCA_DBPASS: orca_pass
       ORCA_DBHOST: postgres
-      ORCA_DBPORT: 5433
+      PGPASSWORD: orca_pass
+      ORCA_DBPORT: 5432
     depends_on:
       - postgres
     volumes:
       - ./db.conf.sh:/opt/jma/weborca/conf/db.conf
       - ./weborca-init:/opt/jma/weborca/app/init
+      - ./jma-receipt:/etc/jma-receipt
     # command: /bin/bash -c "/opt/jma/weborca/app/bin/jma-setup && systemctl restart jma-receipt-weborca && sleep infinity"
 
   postgres:
@@ -27,9 +29,9 @@ services:
       POSTGRES_USER: orca_user
       POSTGRES_PASSWORD: orca_pass
     ports:
-      - "5433:5433"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+      - "5432:5432"
+    # volumes:
+    #   - pgdata:/var/lib/postgresql/data
 
 volumes:
   pgdata:

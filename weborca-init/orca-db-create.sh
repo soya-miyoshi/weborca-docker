@@ -45,36 +45,65 @@ run_user_postgres () {
     return 0
 }
 
-psql_user_postgres () {
-    su - postgres -c "psql ${DBCONNOPTION} template1 -t -c \"$*\" "
+#!/bin/bash
+
+# Function to execute a query as the PostgreSQL user 'postgres'
+psql_user_postgres() {
+    local query="$1"
+    su - postgres -c "PGPASSWORD=$PGPASSWORD psql ${DBCONNOPTION} template1 -t -c \"$query\"" 2>&1
 }
 
-psql_user_orca () {
-    su - ${ORCAUSER} -c "psql ${DBCONNOPTION} template1 -t -c \"$*\" "
+# Function to execute a query as the ORCA user
+psql_user_orca() {
+    local query="$1"
+    su - ${ORCAUSER} -c "PGPASSWORD=$PGPASSWORD psql ${DBCONNOPTION} template1 -t -c \"$query\"" 2>&1
 }
 
-host_check () {
-    HOST=$1
-  if ! psql_user_postgres "SELECT now();">/dev/null ; then
-      if ! psql_user_orca "SELECT now();">/dev/null ; then
-	  if ! su - ${ORCAUSER} -c "psql ${DBCONNOPTION} ${DBNAME} -t -c \"SELECT now();\" " >/dev/null; then
-	      return 1
-	  fi
-      fi
-  fi
-  return 0
+# Function to check if PostgreSQL is reachable
+host_check() {
+    local host="$1"
+    echo "pgpassword:$PGPASSWORD"
+
+    echo "Testing connection as 'postgres' user..."
+    if output=$(psql_user_postgres "SELECT now();") >/dev/null 2>&1; then
+        echo "Connection successful as 'postgres'."
+    else
+        echo "Connection failed as 'postgres': $output"
+        return 1
+    fi
+
+    echo "Testing connection as 'orca_user'..."
+    if output=$(psql_user_orca "SELECT now();") >/dev/null 2>&1; then
+        echo "Connection successful as 'orca_user'."
+    else
+        echo "Connection failed as 'orca_user': $output"
+        return 1
+    fi
+
+    echo "Testing connection with user '${ORCAUSER}' on database '${DBNAME}'..."
+    if output=$(su - ${ORCAUSER} -c "PGPASSWORD=$PGPASSWORD psql ${DBCONNOPTION} ${DBNAME} -t -c \"SELECT now();\"") >/dev/null 2>&1; then
+        echo "Connection successful with user '${ORCAUSER}' on database '${DBNAME}'."
+    else
+        echo "Connection failed with user '${ORCAUSER}' on database '${DBNAME}': $output"
+        return 1
+    fi
 }
 
-dbhost_check () {
-  checkhost=$DBHOST
-  if [ x"$checkhost" = "x"  ]; then
-      checkhost="localhost"
-  fi
-  echo -ne "DBHOST:\t\t"
-  if ! host_check ; then
-      err "PostgreSQL: (${checkhost})に接続できません" 99
-  fi
-  echo "OK (PostgreSQL:${checkhost})"
+# Function to check the database host
+dbhost_check() {
+    local checkhost="$DBHOST"
+    if [ -z "$checkhost" ]; then
+        checkhost="localhost"
+    fi
+
+    echo -ne "DBHOST:\t\t"
+    
+    if host_check "$checkhost"; then
+        echo "OK (PostgreSQL: $checkhost)"
+    else
+        echo "ERROR: Unable to connect to PostgreSQL at $checkhost"
+        exit 99
+    fi
 }
 
 create_dbuser() {
@@ -120,7 +149,7 @@ create_dbuser() {
     # PASSWORD
     if [ x"$DBPASS" != "x" ]; then
 	echo -ne "DBPASS:\t\t"
-	run_user_orca "psql ${DBCONNOPTION} -U postgres -c \"${SETPASSWORD}\""
+	run_user_orca "PGPASSWORD=$PGPASSWORD psql ${DBCONNOPTION} -U postgres -c \"${SETPASSWORD}\""
 	ECHO_RUN "SET (${DBUSER})"
     fi
   fi
@@ -130,10 +159,10 @@ create_dbuser() {
 create_db(){
   echo -ne "DATABASE:\t"
   # DB
-  DBEXIST=`su - ${ORCAUSER} -c "psql ${DBCONNOPTION} template1 -t -c \"${DBCHECKSQL}\""`
+  DBEXIST=`su - ${ORCAUSER} -c "PGPASSWORD=$PGPASSWORD psql ${DBCONNOPTION} template1 -t -c \"${DBCHECKSQL}\""`
   RC=$?
   if [ ! -z $DBEXIST ] ; then
-    DBEXIST=`su - ${ORCAUSER} -c "psql ${DBCONNOPTION} ${DBNAME} -t -c \"${DBCHECKSQL}\""`
+    DBEXIST=`su - ${ORCAUSER} -c "PGPASSWORD=$PGPASSWORD psql ${DBCONNOPTION} ${DBNAME} -t -c \"${DBCHECKSQL}\""`
     RC=$?
   fi
   if [ $RC -ne 0 ] ; then
@@ -152,7 +181,7 @@ create_db(){
 
 dbencoding() {
   echo -ne "DBENCODING:\t"
-  ORCAENCODING=`su - ${ORCAUSER} -c "psql ${DBCONNOPTION} ${DBNAME} -t -c \"${ENCODINGCHECK}\""`
+  ORCAENCODING=`su - ${ORCAUSER} -c "PGPASSWORD=$PGPASSWORD psql ${DBCONNOPTION} ${DBNAME} -t -c \"${ENCODINGCHECK}\""`
   if [ $? -ne 0 ] ; then
       err "encoding error (${DBNAME})" 99
   fi

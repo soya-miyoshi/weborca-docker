@@ -105,7 +105,10 @@ VERDATA=`echo $VERLIST | awk '{i=split($0,arr,"("); print arr[i]} ' `
 VERDATA1=`echo $VERDATA | awk '{gsub(/[-)]/,""); print } ' `
 VERDATA2=`echo $VERDATA | awk '{gsub(/[)]/,""); print } ' `
 
-DBVERSION=`su - $ORCAUSER -c "psql ${DBCONNOPTION} -At -c \"${DBVERSIONSQL}\" $DBNAME"`
+echo $ORCAUSER
+echo "PGPASSWORD=$PGPASSWORD psql ${DBCONNOPTION} -At -c \"${DBVERSIONSQL}\" $DBNAME"
+DBVERSION=`su - $ORCAUSER -c "PGPASSWORD=$PGPASSWORD psql ${DBCONNOPTION} -At -c \"${DBVERSIONSQL}\" $DBNAME"`
+echo $DBVERSION
 if [ $? -ne 0 ] ; then
     err "データベース管理情報が読み取れません。処理を中止します" 99
 fi
@@ -122,7 +125,7 @@ fi
 
 echo -ne "UPDATE CHECK:\t"
 #DB管理情報更新
-echo "update tbl_dbkanri set version='$VERDATA2' where kanricd='ORCADB00';" | su - $ORCAUSER -c "psql ${DBCONNOPTION} -q $DBNAME" >&2
+echo "update tbl_dbkanri set version='$VERDATA2' where kanricd='ORCADB00';" | su - $ORCAUSER -c "PGPASSWORD=$PGPASSWORD psql ${DBCONNOPTION} -q $DBNAME" >&2
 
 #オフラインメンテナンスであるかチェック
 OFFLINEPATH=`echo $DBUPGRADEPATH | sed -ne 's#file://##p'`
@@ -156,7 +159,7 @@ else
 fi
 
 echo -ne "DBLIST:\t\t"
-DBLIST=`su - $ORCAUSER -c "psql ${DBCONNOPTION} -At -c \"${DBLISTSQL}\" $DBNAME"`
+DBLIST=`su - $ORCAUSER -c "PGPASSWORD=$PGPASSWORD psql ${DBCONNOPTION} -At -c \"${DBLISTSQL}\" $DBNAME"`
 if [ $? -ne 0 ] || [ -z "$DBLIST" ] ; then
     err "データベース管理情報が読み取れません。処理を中止します" 99
 fi
@@ -237,7 +240,7 @@ do
 	    echo $UPD2 >>${THISTIMELOG}
             su - $ORCAUSER -c "bash $TMPDIR/$MSTDIR/$UPD2 \"${DBOPTION}\" ${INSTALLLOG} ${THISTIMELOG}" >&2
         else
-            su - $ORCAUSER -c "psql ${DBCONNOPTION} -e $DBNAME < \"$TMPDIR/$MSTDIR/$UPD2\" " >&2
+            su - $ORCAUSER -c "PGPASSWORD=$PGPASSWORD psql ${DBCONNOPTION} -e $DBNAME < \"$TMPDIR/$MSTDIR/$UPD2\" " >&2
         fi
 	echo "$TMPDIR/$MSTDIR/$UPD2 done." >&2
     fi
@@ -249,14 +252,14 @@ do
         fi
     done
     #DB管理情報更新
-    echo "UPDATE tbl_dbkanri set dbsversion1='${UPD:0:21}',dbsversion2='${UPD:0:21}',upymd=to_char(now(),'yyyymmdd'),uphms=to_char(now(),'hh24miss') WHERE kanricd='ORCADB00';" | su - $ORCAUSER -c "psql ${DBCONNOPTION} -e $DBNAME >&2"
+    echo "UPDATE tbl_dbkanri set dbsversion1='${UPD:0:21}',dbsversion2='${UPD:0:21}',upymd=to_char(now(),'yyyymmdd'),uphms=to_char(now(),'hh24miss') WHERE kanricd='ORCADB00';" | su - $ORCAUSER -c "PGPASSWORD=$PGPASSWORD psql ${DBCONNOPTION} -e $DBNAME >&2"
     ECHO_N_RUN "."
 done
 ECHO_RUN "OK"
 
 if [ -e /tmp/ORCA_CLEAN_INSTALL ]; then
   if [ "`cat /tmp/ORCA_CLEAN_INSTALL`" = "true" ]; then
-    su - ${ORCAUSER} -c "psql ${DBCONNOPTION} ${DBNAME} -Atqc \"
+    su - ${ORCAUSER} -c "PGPASSWORD=$PGPASSWORD psql ${DBCONNOPTION} ${DBNAME} -Atqc \"
       drop table if exists tbl_mstkanri_org;
       drop table if exists tbl_adrs_org;
       drop table if exists tbl_chk_org;

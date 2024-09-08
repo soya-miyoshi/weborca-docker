@@ -31,7 +31,7 @@ fi
 
 echo -ne "DBKANRI\t\t"
 DBKANRISQL="SELECT count(*) FROM pg_tables WHERE tablename = 'tbl_dbkanri';"
-DBKANRICHECK=`su - ${ORCAUSER} -c "psql ${DBCONNOPTION} -At ${DBNAME} -c \"${DBKANRISQL}\""`
+DBKANRICHECK=`su - ${ORCAUSER} -c "PGPASSWORD=$PGPASSWORD psql ${DBCONNOPTION} -At ${DBNAME} -c \"${DBKANRISQL}\""`
 RC=$?
 if [ $RC -ne 0 ] ; then
     err "(${DBKANRISQL}) が処理出来ませんでした" 99
@@ -41,7 +41,7 @@ if [ "$DBKANRICHECK" -gt 0 ]; then
   exit 0
 fi
 
-DBKANRI=`su - ${ORCAUSER} -c "psql ${DBCONNOPTION} -q --set \"ON_ERROR_STOP=1\" ${DBNAME} -f ${INITDIR}/orca_dbkanri_orig.dump" 2>&1`
+DBKANRI=`su - ${ORCAUSER} -c "PGPASSWORD=$PGPASSWORD psql ${DBCONNOPTION} -q --set \"ON_ERROR_STOP=1\" ${DBNAME} -f ${INITDIR}/orca_dbkanri_orig.dump" 2>&1`
 RC=$?
 if [ $RC -ne 0 ] ; then
     err "${INITDIR}/orca_dbkanri_orig.dump が処理出来ませんでした" 99
