@@ -20,7 +20,8 @@ RUN weborca-install
 RUN apt install vim -y
 
 COPY db.conf.sh /opt/jma/weborca/conf/db.conf
-
+RUN chmod 755 /opt/jma/weborca/conf/db.conf
+RUN chmod +x /etc/jma-receipt/jma-receipt.env
 # RUN /opt/jma/weborca/app/bin/jma-setup
 # RUN systemctl restart jma-receipt-weborca
 
