@@ -105,10 +105,7 @@ VERDATA=`echo $VERLIST | awk '{i=split($0,arr,"("); print arr[i]} ' `
 VERDATA1=`echo $VERDATA | awk '{gsub(/[-)]/,""); print } ' `
 VERDATA2=`echo $VERDATA | awk '{gsub(/[)]/,""); print } ' `
 
-echo $ORCAUSER
-echo "PGPASSWORD=$PGPASSWORD psql ${DBCONNOPTION} -At -c \"${DBVERSIONSQL}\" $DBNAME"
 DBVERSION=`su - $ORCAUSER -c "PGPASSWORD=$PGPASSWORD psql ${DBCONNOPTION} -At -c \"${DBVERSIONSQL}\" $DBNAME"`
-echo $DBVERSION
 if [ $? -ne 0 ] ; then
     err "データベース管理情報が読み取れません。処理を中止します" 99
 fi
@@ -161,7 +158,8 @@ fi
 echo -ne "DBLIST:\t\t"
 DBLIST=`su - $ORCAUSER -c "PGPASSWORD=$PGPASSWORD psql ${DBCONNOPTION} -At -c \"${DBLISTSQL}\" $DBNAME"`
 if [ $? -ne 0 ] || [ -z "$DBLIST" ] ; then
-    err "データベース管理情報が読み取れません。処理を中止します" 99
+    echo "DBLIST: での失敗"
+    err "データベース管理情報が読み取れませ。処理を中止します" 99
 fi
 echo "OK (`echo $DBLIST|cut -d'|' -f2`)"
 

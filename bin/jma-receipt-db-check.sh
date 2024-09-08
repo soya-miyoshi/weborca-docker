@@ -38,10 +38,10 @@ create_pgpass
 if [ "$DBHOST" = "localhost" ]; then
   DBCONNOPTION=
 fi
-DBVERSION=`su - $ORCAUSER -c "psql ${DBCONNOPTION} -At -c \"${DBVERSIONSQL}\" $DBNAME"`
+DBVERSION=`psql ${DBCONNOPTION} -At -c "${DBVERSIONSQL}" $DBNAME`
 RC=$?
 if [ $RC -ne 0 ] || [ -z "$DBVERSION" ] ; then
-  echo "ERROR: データベース管理情報が読み取れません。処理を中止します"
+  echo "ERROR: Failed to read DBVERSION at $(basename "$0")"
   exit 99
 fi
 DBVERSION1=`echo $DBVERSION | awk '{gsub(/[-)]/,""); print } ' `
