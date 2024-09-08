@@ -1,0 +1,7 @@
+---
+:root: /opt/jma/weborca/var/plugin
+:list:
+ - https://dl.orca.med.or.jp/receipt/plugin/5.2.0/jpplist1.yml
+ - https://dl.orca.med.or.jp/receipt/plugin/5.2.0/jpplist2.yml
+:linkprefix: /usr/local/site-jma-receipt
+:verify: true
